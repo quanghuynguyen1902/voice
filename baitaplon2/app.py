@@ -58,10 +58,10 @@ class Interface(QMainWindow):
             audios = self.asr.listen()
             # self.terminal.append('Detecting...')
             for audio in audios:
+                print(audios.index(audio))
                 audio.export('test.wav')
-                self.asr.noise_cancel()
-                command = self.asr.asr()
-            self.stop()
+                # self.asr.noise_cancel()
+                command = self.asr.predict_word()
             self.loop()
         else:
             print("the end")

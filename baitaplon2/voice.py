@@ -15,23 +15,14 @@ from sklearn.cluster import KMeans
 class ASR():
     def __init__(self):
         self.mapping = ['mot', 'khong', 'nguoi', 'toi']
-        self.hmm = pickle.load(open('model/models.pk', 'rb'))
-        self.n_sample=75
+        self.models = pickle.load(open('model/models.pk', 'rb'))
+        self.kmeans = pickle.load(open('model/kmean.pk', 'rb'))
     
-    def clustering(X, n_clusters=10):
+    def clustering(self, X, n_clusters):
         kmeans = KMeans(n_clusters=n_clusters, n_init=50, random_state=0, verbose=0)
         kmeans.fit(X)
         print("centers", kmeans.cluster_centers_.shape)
         return kmeans  
-
-    def softmax_stable(self, Z):
-        """
-        Compute softmax values for each sets of scores in Z.
-        each column of Z is a set of score.    
-        """
-        e_Z = np.exp(Z - np.max(Z))
-        A = e_Z / e_Z.sum()
-        return A
 
     def record_sound(self, filename, duration=1, fs=44100, play=False):
         print('Recording...')
@@ -60,8 +51,7 @@ class ASR():
         hop_length = math.floor(sr*0.010) # 10ms hop
         win_length = math.floor(sr*0.025)
         mfcc = librosa.feature.mfcc(
-        y, sr, n_mfcc=12, n_fft=1024,
-        hop_length=hop_length, win_length=win_length)
+        y, sr, n_mfcc=12, n_fft=1024, hop_length=hop_length, win_length=win_length)
         # substract mean from mfcc --> normalize mfcc
         mfcc = mfcc - np.mean(mfcc, axis=1).reshape((-1,1)) 
         # delta feature 1st order and 2nd order
@@ -69,23 +59,21 @@ class ASR():
         delta2 = librosa.feature.delta(mfcc, order=2)
         # X is 36 x T
         X = np.concatenate([mfcc, delta1, delta2], axis=0) # O^r
-        kmeans = self.clustering(all_vectors, n_clusters=21)
-        t = kmeans.predict(X.T).reshape(-1,1)
-        return t
+        return X.T
 
-    def asr(self):
-        # self.record_sound('test.wav')
-        mfcc = self.get_mfcc('test.wav')
-        score = []
-        for i in range(len(self.mapping)):
-            score.append(self.hmm[i].score(mfcc))
-        res = self.mapping[score.index(max(score))]
-        print('predict: {}'.format(res))
-        return res
+    def predict_word(self):
+        data = self.get_mfcc('0.wav')
+        data = self.kmeans.predict(data).reshape(-1,1)
+        scores = {dict_word[cname] : model.score(data) for cname, model in self.models.items()}            
+        print(scores)
+        pred_name = max(scores, key=lambda key: scores[key])
+        print(f"Result: {pred_name}")                            
+        return pred_name
+
     def listen(self):
         while True:
-            self.record_sound('record.wav', duration=5)
+            self.record_sound('record.wav', duration=2)
             myaudio = AudioSegment.from_wav('record.wav')
-            audios = silence.split_on_silence(myaudio, min_silence_len=300, silence_thresh=-32, keep_silence=400)
+            audios = silence.split_on_silence(myaudio, min_silence_len=600, silence_thresh=-40, keep_silence=100)
             if audios: break
         return audios
