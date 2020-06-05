@@ -18,17 +18,17 @@ class Interface(QMainWindow):
         
         self.terminal.setFixedSize(300, 260)
         self.terminal.setReadOnly(True)
-        self.terminal.setText('\nPress Play button to start\n\nAvailable objects:\n-không\n-tôi\n-người\n-một\n')
+        self.terminal.setText('\nPress Play button to start\n\nAvailable word:\n-không\n-tôi\n-người\n-một\n-Bệnh nhân\n')
 
         self.startBtn = QPushButton()
         self.startBtn.setFixedSize(32,32)
         self.startBtn.setIcon(QtGui.QIcon('button/start.png'))
         self.startBtn.clicked.connect(self.start)
         
-        self.stopBtn = QPushButton()
-        self.stopBtn.setFixedSize(32,32)
-        self.stopBtn.setIcon(QtGui.QIcon('button/stop.png'))
-        self.stopBtn.clicked.connect(self.stop)
+        # self.stopBtn = QPushButton()
+        # self.stopBtn.setFixedSize(32,32)
+        # self.stopBtn.setIcon(QtGui.QIcon('button/stop.png'))
+        # self.stopBtn.clicked.connect(self.stop)
 
         self.wid = QWidget(self)
         self.setCentralWidget(self.wid)
@@ -38,7 +38,7 @@ class Interface(QMainWindow):
 
         self.hbox = QHBoxLayout()
         self.hbox.addWidget(self.startBtn)
-        self.hbox.addWidget(self.stopBtn)
+        # self.hbox.addWidget(self.stopBtn)
 
         self.vbox.addLayout(self.hbox)
 
@@ -58,10 +58,10 @@ class Interface(QMainWindow):
             audios = self.asr.listen()
             # self.terminal.append('Detecting...')
             for audio in audios:
-                print(audios.index(audio))
                 audio.export('test.wav')
-                # self.asr.noise_cancel()
+                self.asr.noise_cancel()
                 command = self.asr.predict_word()
+            self.stop()
             self.loop()
         else:
             print("the end")
